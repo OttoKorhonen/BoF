@@ -4,14 +4,6 @@ from flask import Flask, jsonify
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 
-'''
-a. Luo ohjelma joka hakee Suomen pankin verkkosivulta valuuttakurssit. Palauta valuutat ja niiden kurssit.
-b. Luo REST-rajapinta josta voi hakea valuuttakurssikoodilla nykyisen kurssin.
-c. Muokkaa rajapintaa niin että voit kysyä ja saada vastauksena useita kursseja.
-d. Lisää rajapintaa BASIC AUTH autentikaatio.
-e. Lisää rajapintaan autentikaatio client-sertifikaatilla.
-'''
-
 app = Flask(__name__)
 auth = HTTPBasicAuth()
 app.secret_key = 'sheize0heemifoaHech9Uz9oepa4ah'
@@ -38,19 +30,30 @@ def format_data(data):
     return currencies
 
 
+def fetch_data(url: str):
+    '''function fetches data from bof api and returns it'''
+    currencies_data = requests.get(url)
+
+    return currencies_data
+
+
 @app.route('/api/all', methods=['GET'])
+@auth.login_required
 def all_currencies():
     '''function returns data of all currencies in JSON format'''
+    url = 'https://api.boffsaopendata.fi/referencerates/api/ExchangeRate'
+    data = fetch_data(url)
 
-    currencies_data = requests.get(
-        'https://api.boffsaopendata.fi/referencerates/api/ExchangeRate')
-
-    return jsonify(format_data(currencies_data))
+    return jsonify(format_data(data))
 
 
 @auth.verify_password
 def verify_password(username, password):
-    '''security function that asks the user to sign in before use'''
+    '''
+    security function that asks the user to sign in before use.
+    this is not a proper way to make an authentication. user info
+    should never be available like this.
+    '''
     user = 'testi@gmail.com'
     pwd = '123'
 
@@ -68,9 +71,9 @@ def verify_password(username, password):
 def currencies_by_name(currency):
     '''function returns one or more currencies'''
     currency = currency.upper()
+    url = f'https://api.boffsaopendata.fi/referencerates/api/ExchangeRate?currencies={currency}'
 
-    data = requests.get(
-        f'https://api.boffsaopendata.fi/referencerates/api/ExchangeRate?currencies={currency}')
+    data = fetch_data(url)
 
     return jsonify(format_data(data))
 
