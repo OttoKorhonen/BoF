@@ -30,9 +30,13 @@ def format_data(data):
     return currencies
 
 
-def fetch_data(url: str):
+def fetch_data(*currencies):
     '''function fetches data from bof api and returns it'''
-    currencies_data = requests.get(url)
+    url = 'https://api.boffsaopendata.fi/referencerates/api/ExchangeRate'
+    params = {
+        'currencies': currencies
+    }
+    currencies_data = requests.get(url, params=params)
 
     return currencies_data
 
@@ -41,8 +45,7 @@ def fetch_data(url: str):
 @auth.login_required
 def all_currencies():
     '''function returns data of all currencies in JSON format'''
-    url = 'https://api.boffsaopendata.fi/referencerates/api/ExchangeRate'
-    data = fetch_data(url)
+    data = fetch_data()
 
     return jsonify(format_data(data))
 
@@ -66,18 +69,15 @@ def verify_password(username, password):
     return False
 
 
-@app.route('/api/currencies/<currency>', methods=['GET', 'POST'])
+@app.route('/api/currencies/<currency>', methods=['GET'])
 @auth.login_required
 def currencies_by_name(currency):
     '''function returns one or more currencies'''
     currency = currency.upper()
-    url = f'https://api.boffsaopendata.fi/referencerates/api/ExchangeRate?currencies={currency}'
-
-    data = fetch_data(url)
+    data = fetch_data(currency)
 
     return jsonify(format_data(data))
 
 
 if __name__ == '__main__':
     app.run(debug=True)
-
